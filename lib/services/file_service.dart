@@ -145,31 +145,34 @@ class FileService {
   }
 
   String _stripHtml(String html) {
-    try {
-      final doc = XmlDocument.parse(html);
-      final textBuffer = StringBuffer();
-      _extractText(doc.rootElement, textBuffer);
-      return textBuffer.toString().trim();
-    } catch (_) {
-      return html
-          .replaceAll(RegExp(r'<[^>]*>'), ' ')
-          .replaceAll(RegExp(r'\s+'), ' ')
-          .trim();
-    }
-  }
-
-  void _extractText(XmlNode node, StringBuffer buffer) {
-    if (node is XmlText) {
-      buffer.write(node.value);
-    } else if (node is XmlElement) {
-      final name = node.localName;
-      if (name == 'br' || name == 'p' || name == 'div') {
-        buffer.write(' ');
-      }
-      for (final child in node.children) {
-        _extractText(child, buffer);
-      }
-    }
+    html = html.replaceAll(RegExp(r'<!--.*?-->', dotAll: true), '\n');
+    html = html.replaceAllMapped(
+      RegExp(r'<(script|style)[^>]*>.*?</\1>', dotAll: true, caseSensitive: false),
+      (_) => '\n',
+    );
+    html = html.replaceAll(RegExp(r'</?(?:p|div|h[1-6]|li|tr|br|section|blockquote|article|nav|header|footer|figure|figcaption)[^>]*>', caseSensitive: false), '\n');
+    html = html.replaceAll(RegExp(r'<[^>]*>'), '');
+    html = html
+      .replaceAll('&nbsp;', ' ')
+      .replaceAll('&amp;', '&')
+      .replaceAll('&lt;', '<')
+      .replaceAll('&gt;', '>')
+      .replaceAll('&quot;', '"')
+      .replaceAll('&apos;', "'")
+      .replaceAll('&#39;', "'")
+      .replaceAll('&#8211;', '-')
+      .replaceAll('&#8212;', '-')
+      .replaceAll('&#8216;', "'")
+      .replaceAll('&#8217;', "'")
+      .replaceAll('&#8220;', '"')
+      .replaceAll('&#8221;', '"')
+      .replaceAll('&#8230;', '...');
+    html = html.replaceAllMapped(RegExp(r'&#(\d+);'), (m) => String.fromCharCode(int.parse(m[1]!)));
+    html = html.replaceAll(RegExp(r'[ \t]+'), ' ');
+    html = html.replaceAll(RegExp(r'\n\s*\n+'), '\n');
+    html = html.replaceAll(RegExp(r'\n[ \t]+'), '\n');
+    html = html.replaceAll(RegExp(r'[ \t]+\n'), '\n');
+    return html.trim();
   }
 
   Future<String> getTempDir() async {

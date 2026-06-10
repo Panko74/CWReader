@@ -15,8 +15,8 @@ subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
 
-    // Force Kotlin plugin on file_picker (doesn't apply KGP on AGP 9+)
-    if (project.name == "file_picker") {
+    // Force Kotlin plugin on plugins that don't apply KGP on AGP 9+
+    if (project.name == "file_picker" || project.name == "shared_preferences_android") {
         project.plugins.apply("org.jetbrains.kotlin.android")
     }
 }
