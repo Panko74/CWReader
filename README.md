@@ -13,16 +13,16 @@ Read your favorite books as CW (Continuous Wave) Morse code — perfect for ham 
 - **Per-file progress** — Automatically saves last position for each file
 - **Bookmarks** — Save and restore positions per file
 - **Character substitutions** — Customizable replacements (e.g. quotes, special chars)
-- **Italian accented characters** — à, è, é, ì, ò, ù mapped to standard Italian Morse codes
+- **Italian accented characters** — à, è, é, ò, ù mapped to standard Italian Morse codes
 - **Automatic encoding detection** — UTF-8, Latin-1, Windows-1252, UTF-16 BOM
 
 ## Download
 
-[Download latest APK](../../releases/latest)
+[Download latest APK](../../releases/latest) CWReader-release.apk, move it on your Android device and install it. Grant the sandbox permissions to "install anyway".
 
 ## License
 
-MIT
+GPLv3
 
 ## Credits
 
