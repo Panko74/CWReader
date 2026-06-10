@@ -1,6 +1,6 @@
 {
-    "name": "ebook2cw",
-    "short_name": "ebook2cw",
+    "name": "cwreader",
+    "short_name": "cwreader",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

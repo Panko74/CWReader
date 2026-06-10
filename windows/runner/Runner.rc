@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.ebook2cw" "\0"
-            VALUE "FileDescription", "ebook2cw" "\0"
+            VALUE "CompanyName", "com.cwreader" "\0"
+            VALUE "FileDescription", "cwreader" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "ebook2cw" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.ebook2cw. All rights reserved." "\0"
-            VALUE "OriginalFilename", "ebook2cw.exe" "\0"
-            VALUE "ProductName", "ebook2cw" "\0"
+            VALUE "InternalName", "cwreader" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 com.cwreader. All rights reserved." "\0"
+            VALUE "OriginalFilename", "cwreader.exe" "\0"
+            VALUE "ProductName", "cwreader" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

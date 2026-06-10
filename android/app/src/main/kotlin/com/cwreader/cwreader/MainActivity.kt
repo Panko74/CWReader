@@ -1,4 +1,4 @@
-package com.ebook2cw.ebook2cw
+package com.cwreader.cwreader
 
 import io.flutter.embedding.android.FlutterActivity
 

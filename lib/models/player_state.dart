@@ -78,9 +78,11 @@ class AppSettings {
     Substitution(from: '\u201D', to: '\u0022'),
     Substitution(from: '\u2018', to: "'"),
     Substitution(from: '\u2019', to: "'"),
+    Substitution(from: '\u00AB', to: '-'),
+    Substitution(from: '\u00BB', to: '-'),
     Substitution(from: '\u2014', to: '-'),
     Substitution(from: '\u2013', to: '-'),
-    Substitution(from: '\u2026', to: '.'),
+    Substitution(from: '\u2026', to: '...'),
   ];
 
   AppSettings copyWith({

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
 
-class Ebook2CWApp extends StatelessWidget {
-  const Ebook2CWApp({super.key});
+class CWReaderApp extends StatelessWidget {
+  const CWReaderApp({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -5,10 +5,10 @@
 // 'flutter create' template.
 
 // The application's name. By default this is also the title of the Flutter window.
-PRODUCT_NAME = ebook2cw
+PRODUCT_NAME = cwreader
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.ebook2cw.ebook2cw
+PRODUCT_BUNDLE_IDENTIFIER = com.cwreader.cwreader
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 com.ebook2cw. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 com.cwreader. All rights reserved.
