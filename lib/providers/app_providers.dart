@@ -369,8 +369,7 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
 
   Future<void> _preGenerateNext(int startIndex) async {
     if (_allTokens == null) return;
-    const chunkSize = 30;
-    final chunk = _allTokens!.skip(startIndex).take(chunkSize).toList();
+    final chunk = _buildWordAlignedChunk(startIndex);
     if (chunk.isEmpty) return;
     final settings = _ref.read(appSettingsProvider);
     final generator = AudioGenerator.fromSettings(settings);
