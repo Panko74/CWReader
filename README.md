@@ -22,9 +22,14 @@ Read your favorite books as CW (Continuous Wave) Morse code — perfect for ham 
 
 ## Screenshots
 
-| Home | Playback | Settings (1) | Settings (2) |
-|------|----------|--------------|--------------|
-| ![Open](assets/screenshots/01-Open.jpg) | ![Play](assets/screenshots/02-Play.jpg) | ![Settings1](assets/screenshots/03-Settings1.jpg) | ![Settings2](assets/screenshots/04-Settings2.jpg) |
+<p align="center">
+  <a href="assets/screenshots/01-Open.jpg"><img src="assets/screenshots/01-Open.jpg" width="45%" alt="Open file"></a>
+  <a href="assets/screenshots/02-Play.jpg"><img src="assets/screenshots/02-Play.jpg" width="45%" alt="Playback"></a>
+</p>
+<p align="center">
+  <a href="assets/screenshots/03-Settings1.jpg"><img src="assets/screenshots/03-Settings1.jpg" width="45%" alt="Settings page 1"></a>
+  <a href="assets/screenshots/04-Settings2.jpg"><img src="assets/screenshots/04-Settings2.jpg" width="45%" alt="Settings page 2"></a>
+</p>
 
 ## License
 
