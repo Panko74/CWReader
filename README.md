@@ -22,14 +22,16 @@ Read your favorite books as CW (Continuous Wave) Morse code — perfect for ham 
 
 ## Screenshots
 
-<p align="center">
-  <a href="assets/screenshots/01-Open.jpg"><img src="assets/screenshots/01-Open.jpg" width="45%" alt="Open file"></a>
-  <a href="assets/screenshots/02-Play.jpg"><img src="assets/screenshots/02-Play.jpg" width="45%" alt="Playback"></a>
-</p>
-<p align="center">
-  <a href="assets/screenshots/03-Settings1.jpg"><img src="assets/screenshots/03-Settings1.jpg" width="45%" alt="Settings page 1"></a>
-  <a href="assets/screenshots/04-Settings2.jpg"><img src="assets/screenshots/04-Settings2.jpg" width="45%" alt="Settings page 2"></a>
-</p>
+<table>
+  <tr>
+    <td align="center"><a href="assets/screenshots/01-Open.jpg"><img src="assets/screenshots/01-Open.jpg" width="80%"></a><br><em>Open file</em></td>
+    <td align="center"><a href="assets/screenshots/02-Play.jpg"><img src="assets/screenshots/02-Play.jpg" width="80%"></a><br><em>Playback</em></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="assets/screenshots/03-Settings1.jpg"><img src="assets/screenshots/03-Settings1.jpg" width="80%"></a><br><em>Settings (1)</em></td>
+    <td align="center"><a href="assets/screenshots/04-Settings2.jpg"><img src="assets/screenshots/04-Settings2.jpg" width="80%"></a><br><em>Settings (2)</em></td>
+  </tr>
+</table>
 
 ## License
 
