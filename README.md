@@ -20,6 +20,12 @@ Read your favorite books as CW (Continuous Wave) Morse code — perfect for ham 
 
 [Download latest APK](../../releases/latest) CWReader-release.apk, move it on your Android device and install it. Grant the sandbox permissions to "install anyway".
 
+## Screenshots
+
+| Home | Playback | Settings (1) | Settings (2) |
+|------|----------|--------------|--------------|
+| ![Open](assets/screenshots/01-Open.jpg) | ![Play](assets/screenshots/02-Play.jpg) | ![Settings1](assets/screenshots/03-Settings1.jpg) | ![Settings2](assets/screenshots/04-Settings2.jpg) |
+
 ## License
 
 GPLv3
