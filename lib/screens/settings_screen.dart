@@ -354,7 +354,7 @@ class _AboutSection extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            Text('v1.1.0',
+            Text('v1.1.1',
                 style: theme.textTheme.bodySmall),
             const SizedBox(height: 4),
             Text('Sviluppato da IW5DUA',

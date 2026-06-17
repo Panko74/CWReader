@@ -18,8 +18,14 @@ final appSettingsProvider =
 });
 
 class AppSettingsNotifier extends StateNotifier<AppSettings> {
+  Future<void>? _loadFuture;
+
   AppSettingsNotifier() : super(const AppSettings()) {
-    _load();
+    _loadFuture = _load();
+  }
+
+  Future<void> ensureLoaded() async {
+    await _loadFuture;
   }
 
   Future<void> _load() async {
@@ -274,6 +280,8 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
   }
 
   Future<void> play() async {
+    await _ref.read(appSettingsProvider.notifier).ensureLoaded();
+
     if (state.status == PlayerStatus.paused && _audioPlayer != null) {
       await _audioPlayer!.resume();
       state = state.copyWith(status: PlayerStatus.playing);
@@ -464,7 +472,7 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
         if (found >= words) { newIndex = i + 1; break; }
       }
     }
-    if (newIndex < 0) newIndex = 0;
+    if (found < words) newIndex = 0;
     await _seek(newIndex);
   }
 
