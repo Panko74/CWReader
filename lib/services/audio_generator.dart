@@ -13,6 +13,7 @@ class AudioGenerator {
   final int frequency;
   final Waveform waveform;
   final double volume;
+  final int envelopeSamples;
 
   AudioGenerator({
     this.wpm = 20,
@@ -21,9 +22,12 @@ class AudioGenerator {
     this.frequency = 600,
     this.waveform = Waveform.sine,
     this.volume = 1.0,
+    this.envelopeSamples = 0,
   });
 
   factory AudioGenerator.fromSettings(AppSettings settings) {
+    final envSamples =
+        (settings.envelopeMs * sampleRate / 1000).round().clamp(0, 50);
     return AudioGenerator(
       wpm: settings.wpm,
       farnsworthMs: settings.farnsworth,
@@ -31,6 +35,7 @@ class AudioGenerator {
       frequency: settings.frequency,
       waveform: settings.waveform,
       volume: settings.volume,
+      envelopeSamples: envSamples,
     );
   }
 
@@ -133,11 +138,20 @@ class AudioGenerator {
     var offset = 0;
     for (final seg in segments) {
       if (seg.isTone) {
-        for (int i = 0; i < seg.samples; i++) {
+        final n = seg.samples;
+        for (int i = 0; i < n; i++) {
+          double env = 1.0;
+          if (envelopeSamples > 0 && n > 1) {
+            if (i < envelopeSamples) {
+              env = i / envelopeSamples;
+            } else if (i >= n - envelopeSamples) {
+              env = (n - 1 - i) / envelopeSamples;
+            }
+          }
           final t = i / sampleRate;
           final value = _generateSample(t);
           pcm[offset + i] =
-              (value * volume * 32767).clamp(-32768, 32767).toInt();
+              ((value * env) * volume * 32767).clamp(-32768, 32767).toInt();
         }
       }
       offset += seg.samples;

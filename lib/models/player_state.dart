@@ -62,6 +62,7 @@ class AppSettings {
   final Waveform waveform;
   final List<Substitution> substitutions;
   final double volume;
+  final int envelopeMs;
 
   const AppSettings({
     this.wpm = 20,
@@ -71,6 +72,7 @@ class AppSettings {
     this.waveform = Waveform.sine,
     this.substitutions = defaultSubstitutions,
     this.volume = 1.0,
+    this.envelopeMs = 5,
   });
 
   static const defaultSubstitutions = [
@@ -93,6 +95,7 @@ class AppSettings {
     Waveform? waveform,
     List<Substitution>? substitutions,
     double? volume,
+    int? envelopeMs,
   }) {
     return AppSettings(
       wpm: wpm ?? this.wpm,
@@ -102,6 +105,7 @@ class AppSettings {
       waveform: waveform ?? this.waveform,
       substitutions: substitutions ?? this.substitutions,
       volume: volume ?? this.volume,
+      envelopeMs: envelopeMs ?? this.envelopeMs,
     );
   }
 
@@ -113,6 +117,7 @@ class AppSettings {
         'waveform': waveform.index,
         'substitutions': substitutions.map((s) => s.toJson()).toList(),
         'volume': volume,
+        'envelopeMs': envelopeMs,
       };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) => AppSettings(
@@ -127,5 +132,6 @@ class AppSettings {
                 .toList() ??
             AppSettings.defaultSubstitutions,
         volume: (json['volume'] as num?)?.toDouble() ?? 1.0,
+        envelopeMs: json['envelopeMs'] as int? ?? 5,
       );
 }

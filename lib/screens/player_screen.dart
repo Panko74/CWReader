@@ -43,12 +43,31 @@ class PlayerScreen extends ConsumerWidget {
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const SizedBox(height: 12),
-                    LinearProgressIndicator(
-                      value: state.progress,
-                      minHeight: 8,
-                      borderRadius: BorderRadius.circular(4),
+                    SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        thumbShape: const RoundSliderThumbShape(
+                            enabledThumbRadius: 8),
+                        overlayShape: const RoundSliderOverlayShape(
+                            overlayRadius: 16),
+                        activeTrackColor:
+                            Theme.of(context).colorScheme.primary,
+                        inactiveTrackColor: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest,
+                        thumbColor:
+                            Theme.of(context).colorScheme.primary,
+                        trackHeight: 8,
+                      ),
+                      child: Slider(
+                        value: state.progress.clamp(0.0, 1.0),
+                        onChanged: state.filePath != null
+                            ? (v) => ref
+                                .read(playerProvider.notifier)
+                                .seekToProgress(v)
+                            : null,
+                      ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 4),
                     Text(
                       '${(state.progress * 100).toStringAsFixed(1)}%',
                       style: Theme.of(context).textTheme.bodySmall,

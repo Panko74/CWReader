@@ -19,6 +19,7 @@ class SettingsScreen extends ConsumerWidget {
           _SectionHeader(title: 'Audio'),
           _FrequencySlider(settings: settings, ref: ref),
           _WaveformSelector(settings: settings, ref: ref),
+          _EnvelopeSlider(settings: settings, ref: ref),
           const SizedBox(height: 16),
           _SectionHeader(title: 'Velocità'),
           _WpmSlider(settings: settings, ref: ref),
@@ -255,6 +256,42 @@ class _WaveformSelector extends StatelessWidget {
   }
 }
 
+class _EnvelopeSlider extends StatelessWidget {
+  final AppSettings settings;
+  final WidgetRef ref;
+  const _EnvelopeSlider({required this.settings, required this.ref});
+
+  @override
+  Widget build(BuildContext context) {
+    final ms = settings.envelopeMs;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              ms > 0 ? 'Attacco: $ms ms' : 'Attacco: spento',
+            ),
+            Slider(
+              value: ms.toDouble(),
+              min: 0,
+              max: 50,
+              divisions: 10,
+              label: ms > 0 ? '$ms ms' : 'Off',
+              onChanged: (v) => ref
+                  .read(appSettingsProvider.notifier)
+                  .updateEnvelope(v.round()),
+              onChangeEnd: (_) =>
+                  ref.read(playerProvider.notifier).requestRegen(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _SubstitutionList extends ConsumerWidget {
   final AppSettings settings;
   final WidgetRef ref;
@@ -277,8 +314,9 @@ class _SubstitutionList extends ConsumerWidget {
               ),
             const SizedBox(height: 8),
             TextButton.icon(
-              icon: const Icon(Icons.add),
-              label: const Text('Aggiungi sostituzione'),
+              icon: const Icon(Icons.add, size: 22),
+              label: const Text('Aggiungi sostituzione',
+                  style: TextStyle(fontSize: 16)),
               onPressed: () => _addSubstitution(context, ref),
             ),
           ],
@@ -354,7 +392,7 @@ class _AboutSection extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            Text('v1.1.1',
+            Text('v1.2.0',
                 style: theme.textTheme.bodySmall),
             const SizedBox(height: 4),
             Text('Sviluppato da IW5DUA',
@@ -379,17 +417,20 @@ class _SubstitutionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      dense: true,
+      dense: false,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       leading: IconButton(
         icon: Icon(
           sub.enabled ? Icons.check_box : Icons.check_box_outline_blank,
+          size: 28,
         ),
         onPressed: () =>
             ref.read(appSettingsProvider.notifier).toggleSubstitution(index),
       ),
-      title: Text('${sub.from}  →  ${sub.to}'),
+      title: Text('${sub.from}  →  ${sub.to}',
+          style: const TextStyle(fontSize: 18)),
       trailing: IconButton(
-        icon: const Icon(Icons.delete_outline, size: 20),
+        icon: const Icon(Icons.delete_outline, size: 24),
         onPressed: () =>
             ref.read(appSettingsProvider.notifier).removeSubstitution(index),
       ),

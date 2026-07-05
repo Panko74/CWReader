@@ -74,6 +74,11 @@ class AppSettingsNotifier extends StateNotifier<AppSettings> {
     _save();
   }
 
+  void updateEnvelope(int ms) {
+    state = state.copyWith(envelopeMs: ms.clamp(0, 50));
+    _save();
+  }
+
   void updateSubstitutions(List<Substitution> subs) {
     state = state.copyWith(substitutions: subs);
     _save();
@@ -155,6 +160,17 @@ final bookmarksProvider = FutureProvider<Map<String, int>>((ref) async {
   if (json == null) return {};
   return (jsonDecode(json) as Map).map((k, v) => MapEntry(k as String, v as int));
 });
+
+Future<void> removeRecentFile(String path) async {
+  final prefs = await SharedPreferences.getInstance();
+  final json = prefs.getString(_recentFilesKey);
+  if (json == null) return;
+  final list = (jsonDecode(json) as List<dynamic>)
+      .map((e) => Map<String, dynamic>.from(e as Map))
+      .toList();
+  list.removeWhere((e) => e['path'] == path);
+  await prefs.setString(_recentFilesKey, jsonEncode(list));
+}
 
 Future<void> _addRecentFileHelper(Ref ref, String path, String name) async {
   final prefs = await SharedPreferences.getInstance();
@@ -432,6 +448,12 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     _autoSave();
   }
 
+  Future<void> seekToProgress(double progress) async {
+    if (_allTokens == null || _allTokens!.isEmpty) return;
+    final newIndex = (progress * _allTokens!.length).round().clamp(0, _allTokens!.length - 1);
+    await _seek(newIndex);
+  }
+
   Future<void> _seek(int newIndex) async {
     if (_allTokens == null) return;
     if (newIndex < 0) newIndex = 0;
@@ -466,7 +488,11 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     final current = state.currentIndex;
     var newIndex = current;
     var found = 0;
-    for (int i = current - 1; i >= 0; i--) {
+    int start = current - 1;
+    if (start >= 0 && _allTokens![start] == ' ') {
+      start--;
+    }
+    for (int i = start; i >= 0; i--) {
       if (_allTokens![i] == ' ') {
         found++;
         if (found >= words) { newIndex = i + 1; break; }

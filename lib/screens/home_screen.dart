@@ -36,10 +36,10 @@ class HomeScreen extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.book_rounded,
-                    size: 80,
-                    color: Theme.of(context).colorScheme.primary,
+                  Image.asset(
+                    'ICONA.png',
+                    width: 96,
+                    height: 96,
                   ),
                   const SizedBox(height: 24),
                   Text(
@@ -84,42 +84,56 @@ class HomeScreen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    ...recentFiles.take(10).map((file) {
-                      final path = file['path']!;
-                      final name = file['name']!;
-                      final lastPos = lastPositions[path] ?? 0;
-                      final hasBm = bookmarks.containsKey(path) && bookmarks[path]! >= 0;
-                      return Card(
-                        child: ListTile(
-                          leading: Icon(
-                            hasBm ? Icons.bookmark : Icons.description,
-                            size: 20,
+                      ...recentFiles.take(10).map((file) {
+                        final path = file['path']!;
+                        final name = file['name']!;
+                        final lastPos = lastPositions[path] ?? 0;
+                        final hasBm = bookmarks.containsKey(path) && bookmarks[path]! >= 0;
+                        return Card(
+                          child: ListTile(
+                            leading: Icon(
+                              hasBm ? Icons.bookmark : Icons.description,
+                              size: 20,
+                            ),
+                            title: Text(name, overflow: TextOverflow.ellipsis),
+                            subtitle: Text(
+                              lastPos > 0
+                                  ? 'Riprendi da parola $lastPos'
+                                  : 'Nuovo',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                FilledButton.tonalIcon(
+                                  icon: const Icon(Icons.play_arrow, size: 18),
+                                  label: Text(lastPos > 0 ? 'Continua' : 'Apri'),
+                                  onPressed: () {
+                                    ref.read(playerProvider.notifier).loadFile(
+                                      path,
+                                      name,
+                                    );
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (_) => const PlayerScreen()),
+                                    );
+                                  },
+                                ),
+                                const SizedBox(width: 8),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline, size: 20),
+                                  tooltip: 'Rimuovi',
+                                    onPressed: () async {
+                                      await removeRecentFile(path);
+                                      ref.invalidate(recentFilesProvider);
+                                    },
+                                ),
+                              ],
+                            ),
                           ),
-                          title: Text(name, overflow: TextOverflow.ellipsis),
-                          subtitle: Text(
-                            lastPos > 0
-                                ? 'Riprendi da parola $lastPos'
-                                : 'Nuovo',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          trailing: FilledButton.tonalIcon(
-                            icon: const Icon(Icons.play_arrow, size: 18),
-                            label: Text(lastPos > 0 ? 'Continua' : 'Apri'),
-                            onPressed: () {
-                              ref.read(playerProvider.notifier).loadFile(
-                                path,
-                                name,
-                              );
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (_) => const PlayerScreen()),
-                              );
-                            },
-                          ),
-                        ),
-                      );
-                    }),
+                        );
+                      }),
                   ],
                 ],
               ),
