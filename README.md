@@ -4,21 +4,24 @@ Convert EPUB/TXT ebooks to Morse code audio and play them back.
 
 Read your favorite books as CW (Continuous Wave) Morse code — perfect for ham radio operators learning or practicing Morse code.
 
+## Download
+
+[Download latest APK](../../releases/latest) — `CWReader-release.apk`, move it on your Android device and install it. Grant the sandbox permissions to "install anyway".
+
 ## Features
 
 - **EPUB & TXT support** — Open ebooks or plain text files
 - **Morse code audio** — Sine, square, triangle, or sawtooth waveform
-- **Adjustable speed** — WPM, Farnsworth spacing, extra word spacing
+- **Adjustable speed** — WPM (5–60), Farnsworth spacing, extra word spacing (1x–5x)
 - **Pitch control** — 400–900 Hz carrier frequency
+- **Envelope (attack/release)** — Eliminates clicks at tone boundaries, adjustable 0–50 ms
+- **Scrubbable progress bar** — Drag to any position in the book
 - **Per-file progress** — Automatically saves last position for each file
+- **Recent files** — Last 10 files with quick resume, delete entries
 - **Bookmarks** — Save and restore positions per file
-- **Character substitutions** — Customizable replacements (e.g. quotes, special chars)
-- **Italian accented characters** — à, è, é, ò, ù mapped to standard Italian Morse codes
+- **Character substitutions** — Customizable replacements (e.g. quotes, special chars), bigger UI
+- **Italian accented characters** — à, è, é, ì, ò, ù mapped to standard Italian Morse codes
 - **Automatic encoding detection** — UTF-8, Latin-1, Windows-1252, UTF-16 BOM
-
-## Download
-
-[Download latest APK](../../releases/latest) CWReader-release.apk, move it on your Android device and install it. Grant the sandbox permissions to "install anyway".
 
 ## Screenshots
 
@@ -39,4 +42,4 @@ GPLv3
 
 ## Credits
 
-Developed by **IW5DUA**
+Developed by **IW5DUA** (Panko74)
