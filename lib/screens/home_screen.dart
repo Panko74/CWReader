@@ -56,18 +56,43 @@ class HomeScreen extends ConsumerWidget {
                   if (fileName.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     Card(
-                      child: ListTile(
-                        leading: const Icon(Icons.description),
-                        title: Text(fileName, overflow: TextOverflow.ellipsis),
-                        subtitle: const Text('File caricato'),
-                        trailing: FilledButton.tonalIcon(
-                          icon: const Icon(Icons.play_arrow),
-                          label: const Text('Riproduci'),
-                          onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => const PlayerScreen()),
-                          ),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 12, 4, 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.description, size: 24),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    fileName,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyLarge,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                FilledButton.tonalIcon(
+                                  icon: const Icon(Icons.play_arrow),
+                                  label: const Text('Riproduci'),
+                                  onPressed: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (_) =>
+                                            const PlayerScreen()),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -90,44 +115,75 @@ class HomeScreen extends ConsumerWidget {
                         final lastPos = lastPositions[path] ?? 0;
                         final hasBm = bookmarks.containsKey(path) && bookmarks[path]! >= 0;
                         return Card(
-                          child: ListTile(
-                            leading: Icon(
-                              hasBm ? Icons.bookmark : Icons.description,
-                              size: 20,
-                            ),
-                            title: Text(name, overflow: TextOverflow.ellipsis),
-                            subtitle: Text(
-                              lastPos > 0
-                                  ? 'Riprendi da parola $lastPos'
-                                  : 'Nuovo',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(12, 12, 4, 8),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                FilledButton.tonalIcon(
-                                  icon: const Icon(Icons.play_arrow, size: 18),
-                                  label: Text(lastPos > 0 ? 'Continua' : 'Apri'),
-                                  onPressed: () {
-                                    ref.read(playerProvider.notifier).loadFile(
-                                      path,
-                                      name,
-                                    );
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (_) => const PlayerScreen()),
-                                    );
-                                  },
+                                Row(
+                                  children: [
+                                    Icon(
+                                      hasBm ? Icons.bookmark : Icons.description,
+                                      size: 24,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            name,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyLarge,
+                                          ),
+                                          Text(
+                                            lastPos > 0
+                                                ? 'Riprendi da parola $lastPos'
+                                                : 'Nuovo',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 8),
-                                IconButton(
-                                  icon: const Icon(Icons.delete_outline, size: 20),
-                                  tooltip: 'Rimuovi',
-                                    onPressed: () async {
-                                      await removeRecentFile(path);
-                                      ref.invalidate(recentFilesProvider);
-                                    },
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    FilledButton.tonalIcon(
+                                      icon: const Icon(
+                                          Icons.play_arrow, size: 18),
+                                      label: Text(
+                                          lastPos > 0 ? 'Continua' : 'Apri'),
+                                      onPressed: () {
+                                        ref
+                                            .read(playerProvider.notifier)
+                                            .loadFile(path, name);
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (_) =>
+                                                  const PlayerScreen()),
+                                        );
+                                      },
+                                    ),
+                                    const SizedBox(width: 4),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete_outline,
+                                          size: 20),
+                                      tooltip: 'Rimuovi',
+                                      onPressed: () async {
+                                        await removeRecentFile(path);
+                                        ref.invalidate(recentFilesProvider);
+                                      },
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),

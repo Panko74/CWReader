@@ -85,6 +85,7 @@ class AppSettings {
     Substitution(from: '\u2014', to: '-'),
     Substitution(from: '\u2013', to: '-'),
     Substitution(from: '\u2026', to: '...'),
+    Substitution(from: '&', to: 'e'),
   ];
 
   AppSettings copyWith({
@@ -109,6 +110,16 @@ class AppSettings {
     );
   }
 
+  static List<Substitution> _mergeDefaults(List<Substitution> loaded) {
+    final result = [...loaded];
+    for (final def in AppSettings.defaultSubstitutions) {
+      if (!result.any((s) => s.from == def.from)) {
+        result.add(def);
+      }
+    }
+    return result;
+  }
+
   Map<String, dynamic> toJson() => {
         'wpm': wpm,
         'farnsworth': farnsworth,
@@ -126,11 +137,12 @@ class AppSettings {
         extraWordSpace: (json['extraWordSpace'] as num?)?.toDouble() ?? 1.0,
         frequency: json['frequency'] as int? ?? 600,
         waveform: Waveform.values[json['waveform'] as int? ?? 0],
-        substitutions: (json['substitutions'] as List<dynamic>?)
-                ?.map((e) =>
-                    Substitution.fromJson(e as Map<String, dynamic>))
-                .toList() ??
-            AppSettings.defaultSubstitutions,
+        substitutions: _mergeDefaults(
+            (json['substitutions'] as List<dynamic>?)
+                    ?.map((e) =>
+                        Substitution.fromJson(e as Map<String, dynamic>))
+                    .toList() ??
+                AppSettings.defaultSubstitutions),
         volume: (json['volume'] as num?)?.toDouble() ?? 1.0,
         envelopeMs: json['envelopeMs'] as int? ?? 5,
       );

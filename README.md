@@ -22,6 +22,8 @@ Read your favorite books as CW (Continuous Wave) Morse code — perfect for ham 
 - **Character substitutions** — Customizable replacements (e.g. quotes, special chars), bigger UI
 - **Italian accented characters** — à, è, é, ì, ò, ù mapped to standard Italian Morse codes
 - **Automatic encoding detection** — UTF-8, Latin-1, Windows-1252, UTF-16 BOM
+- **Wake lock** — Screen stays on while audio is playing
+- **Default substitution `&` → `e`** — Automatically applied to all texts
 
 ## Screenshots
 
@@ -35,6 +37,28 @@ Read your favorite books as CW (Continuous Wave) Morse code — perfect for ham 
     <td align="center"><a href="assets/screenshots/04-Settings2.jpg"><img src="assets/screenshots/04-Settings2.jpg" width="80%"></a><br><em>Settings (2)</em></td>
   </tr>
 </table>
+
+## Changelog
+
+### v1.2.1
+- **Wake lock**: screen stays on during playback, no more Android sleep/lock
+- **Improved recent files layout**: file info arranged horizontally above the play button
+- **Default substitution `&` → `e`**: automatically added to new installs and merged on existing ones
+- **Internal**: `wakelock_plus` dependency, merged default substitutions on load
+
+### v1.2.0
+- Envelope (attack/release) to eliminate clicks, adjustable 0–50 ms
+- Scrubbable progress bar — drag to any position
+- Per-file progress auto-save and resume
+- Recent files list with quick resume and delete
+- Bookmarks per file
+- Bigger character substitution UI
+- Italian accented characters (À, È, É, Ì, Ò, Ù)
+
+### v1.1.1
+- Fix seek backward
+- Fix speed not applied on first play
+- EPUB HTML stripping improvements
 
 ## License
 

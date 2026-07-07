@@ -9,6 +9,7 @@ import '../models/substitution.dart';
 import '../services/file_service.dart';
 import '../services/morse_converter.dart';
 import '../services/audio_generator.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 final fileServiceProvider = Provider<FileService>((ref) => FileService());
 
@@ -210,6 +211,7 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
   @override
   void dispose() {
     _cleanup();
+    WakelockPlus.disable();
     super.dispose();
   }
 
@@ -222,6 +224,14 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     _chunkPending = false;
     _nextWav = null;
     _nextWavFrom = -1;
+  }
+
+  void _updateWakeLock() {
+    if (state.status == PlayerStatus.playing) {
+      WakelockPlus.enable();
+    } else {
+      WakelockPlus.disable();
+    }
   }
 
   void _cancelPlayback() {
@@ -301,6 +311,7 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     if (state.status == PlayerStatus.paused && _audioPlayer != null) {
       await _audioPlayer!.resume();
       state = state.copyWith(status: PlayerStatus.playing);
+      _updateWakeLock();
       _startProgressTimer();
       return;
     }
@@ -311,6 +322,7 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
         status: PlayerStatus.stopped,
         error: 'Nessun carattere Morse riconoscibile trovato nel testo.',
       );
+      _updateWakeLock();
       return;
     }
 
@@ -333,6 +345,7 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
         progress: 1.0,
         currentIndex: _allTokens!.length,
       );
+      _updateWakeLock();
       return;
     }
 
@@ -363,6 +376,7 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
           currentIndex: _allTokens?.length ?? 0,
           progress: 1.0,
         );
+        _updateWakeLock();
         return;
       }
       state = state.copyWith(currentIndex: newIndex);
@@ -371,6 +385,7 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
 
     await _audioPlayer!.play(BytesSource(wav));
     state = state.copyWith(status: PlayerStatus.playing);
+    _updateWakeLock();
     _startProgressTimer();
 
     _preGenerateNext(fromIndex + chunk.length);
@@ -430,6 +445,7 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     _progressTimer?.cancel();
     _saveTimer?.cancel();
     state = state.copyWith(status: PlayerStatus.paused);
+    _updateWakeLock();
     _autoSave();
   }
 
@@ -445,6 +461,7 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
       progress: 0.0,
       currentIndex: 0,
     );
+    _updateWakeLock();
     _autoSave();
   }
 
