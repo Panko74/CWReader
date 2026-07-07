@@ -27,7 +27,7 @@ Read your favorite books as CW (Continuous Wave) Morse code — perfect for ham 
 
 ## Video
 
-[![CWReader demo](https://img.youtube.com/vi/-LdnxRki6Hw/maxresdefault.jpg)](https://www.youtube.com/shorts/-LdnxRki6Hw)
+[![CWReader demo](https://img.youtube.com/vi/MuG1H5oIrzA/maxresdefault.jpg)](https://youtube.com/shorts/MuG1H5oIrzA)
 
 ## Screenshots
 
