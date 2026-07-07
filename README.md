@@ -25,6 +25,10 @@ Read your favorite books as CW (Continuous Wave) Morse code — perfect for ham 
 - **Wake lock** — Screen stays on while audio is playing
 - **Default substitution `&` → `e`** — Automatically applied to all texts
 
+## Video
+
+[![CWReader demo](https://img.youtube.com/vi/-LdnxRki6Hw/maxresdefault.jpg)](https://www.youtube.com/shorts/-LdnxRki6Hw)
+
 ## Screenshots
 
 <table>

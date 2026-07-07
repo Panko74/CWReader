@@ -9,7 +9,7 @@ import '../models/substitution.dart';
 import '../services/file_service.dart';
 import '../services/morse_converter.dart';
 import '../services/audio_generator.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
+import '../services/partial_wake_lock.dart';
 
 final fileServiceProvider = Provider<FileService>((ref) => FileService());
 
@@ -211,7 +211,7 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
   @override
   void dispose() {
     _cleanup();
-    WakelockPlus.disable();
+    PartialWakeLock.disable();
     super.dispose();
   }
 
@@ -228,9 +228,9 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
 
   void _updateWakeLock() {
     if (state.status == PlayerStatus.playing) {
-      WakelockPlus.enable();
+      PartialWakeLock.enable();
     } else {
-      WakelockPlus.disable();
+      PartialWakeLock.disable();
     }
   }
 
