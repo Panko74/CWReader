@@ -29,37 +29,6 @@ class MorseConverter {
     0x55: {0x0300: 0xD9, 0x0301: 0xDA},
   };
 
-  String _composeNfd(String text) {
-    final out = StringBuffer();
-    for (int i = 0; i < text.length; i++) {
-      final code = text.codeUnitAt(i);
-      if (code >= 0x0300 && code <= 0x036F && i > 0) {
-        final prev = text.codeUnitAt(i - 1);
-        final composed = _combineMap[prev]?[code];
-        if (composed != null) {
-          final s = out.toString();
-          out.clear();
-          out.write(s.substring(0, s.length - 1));
-          out.writeCharCode(composed);
-        }
-      } else {
-        out.writeCharCode(code);
-      }
-    }
-    return out.toString();
-  }
-
-  String _normalizeNonItalian(String text) {
-    return text.split('').map((c) {
-      final lower = c.toLowerCase();
-      final replacement = _accentMap[lower];
-      if (replacement != null) {
-        return c == c.toUpperCase() ? replacement.toUpperCase() : replacement;
-      }
-      return c;
-    }).join('');
-  }
-
   String applySubstitutions(String text) {
     for (final sub in substitutions) {
       if (sub.enabled) {
@@ -70,27 +39,85 @@ class MorseConverter {
   }
 
   List<String> textToTokens(String text) {
-    final tokens = <String>[];
-    text = _composeNfd(text);
-    text = _normalizeNonItalian(text);
-    final words = text.split(RegExp(r'\s+'));
+    return textToTokensWithSource(text).tokens;
+  }
 
-    for (int w = 0; w < words.length; w++) {
-      if (w > 0) tokens.add(' ');
-
-      final word = words[w];
-      for (int i = 0; i < word.length; i++) {
-        final char = word[i];
-        final code = MorseMap.toMorse(char);
-        if (code != null) {
-          tokens.add(code);
+  /// Tokenizza [text] come [textToTokens], restituendo anche, per ogni token,
+  /// l'indice del carattere di origine in [text] (‑1 per i separatori di parola,
+  /// sostituiti poi con l'indice del carattere precedente + 1).
+  TokenizedResult textToTokensWithSource(String text) {
+    final composedCodes = <int>[];
+    final composedSrc = <int>[];
+    for (int i = 0; i < text.length; i++) {
+      final code = text.codeUnitAt(i);
+      if (code >= 0x0300 && code <= 0x036F && composedCodes.isNotEmpty) {
+        final prev = composedCodes.last;
+        final combined = _combineMap[prev]?[code];
+        if (combined != null) {
+          composedCodes[composedCodes.length - 1] = combined;
+          continue;
         }
       }
+      composedCodes.add(code);
+      composedSrc.add(i);
     }
-    return tokens;
+
+    final foldedCodes = <int>[];
+    final foldedSrc = <int>[];
+    for (int i = 0; i < composedCodes.length; i++) {
+      final code = composedCodes[i];
+      final c = String.fromCharCode(code);
+      final lower = c.toLowerCase();
+      final replacement = _accentMap[lower];
+      if (replacement != null) {
+        final out =
+            c == c.toUpperCase() ? replacement.toUpperCase() : replacement;
+        for (int k = 0; k < out.length; k++) {
+          foldedCodes.add(out.codeUnitAt(k));
+          foldedSrc.add(composedSrc[i]);
+        }
+      } else {
+        foldedCodes.add(code);
+        foldedSrc.add(composedSrc[i]);
+      }
+    }
+
+    final tokens = <String>[];
+    final indices = <int>[];
+    final whitespace = RegExp(r'\s');
+    var i = 0;
+    var inWord = false;
+    var lastSrc = -1;
+    while (i < foldedCodes.length) {
+      final code = foldedCodes[i];
+      if (whitespace.hasMatch(String.fromCharCode(code))) {
+        if (inWord) {
+          tokens.add(' ');
+          indices.add(lastSrc + 1);
+          inWord = false;
+        }
+      } else {
+        final morse = MorseMap.toMorse(String.fromCharCode(code));
+        if (morse != null) {
+          tokens.add(morse);
+          lastSrc = foldedSrc[i];
+          indices.add(lastSrc);
+          inWord = true;
+        }
+      }
+      i++;
+    }
+    return TokenizedResult(tokens, indices);
   }
 
   String textToMorseString(String text) {
     return textToTokens(text).join(' ');
   }
+}
+
+class TokenizedResult {
+  final List<String> tokens;
+  final List<int> sourceIndices;
+
+  const TokenizedResult(this.tokens, this.sourceIndices);
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,6 +10,7 @@ import '../models/substitution.dart';
 import '../services/file_service.dart';
 import '../services/morse_converter.dart';
 import '../services/audio_generator.dart';
+import '../services/native_stream_player.dart';
 import '../services/partial_wake_lock.dart';
 
 final fileServiceProvider = Provider<FileService>((ref) => FileService());
@@ -80,6 +82,11 @@ class AppSettingsNotifier extends StateNotifier<AppSettings> {
     _save();
   }
 
+  void updateShowText(bool show) {
+    state = state.copyWith(showText: show);
+    _save();
+  }
+
   void updateSubstitutions(List<Substitution> subs) {
     state = state.copyWith(substitutions: subs);
     _save();
@@ -123,6 +130,15 @@ final morseTokensProvider = Provider<List<String>>((ref) {
 
 final tokenCountProvider = Provider<int>((ref) {
   return ref.watch(morseTokensProvider).length;
+});
+
+final displayTextProvider = Provider<String>((ref) {
+  return ref.watch(processedTextProvider);
+});
+
+final tokenToCharIndexProvider = Provider<List<int>>((ref) {
+  final text = ref.watch(processedTextProvider);
+  return MorseConverter().textToTokensWithSource(text).sourceIndices;
 });
 
 final textContentProvider = StateProvider<String>((ref) => '');
@@ -206,6 +222,36 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
   Uint8List? _nextWav;
   int _nextWavFrom = -1;
 
+  final NativeStreamPlayer _stream = NativeStreamPlayer();
+  bool _streamActive = false;
+  int _streamGen = 0;
+  bool _streamInitialized = false;
+  int _streamFramesFed = 0;
+  int _streamBaseHead = 0;
+  bool _streamFinished = false;
+  DateTime? _streamFinishedAt;
+  Uint8List? _streamPending;
+  int _streamPendingOff = 0;
+  int _streamPendingTokens = 0;
+  List<int>? _streamTokenPositions;
+  int _streamBaseToken = 0;
+  int _totalStreamSamples = 0;
+
+  static const int _streamSampleRate = 44100;
+  static const int _streamFeedCapFrames = _streamSampleRate * 2;
+  static const int _streamSliceFrames = _streamSampleRate;
+  static const Duration _streamSleep = Duration(milliseconds: 80);
+
+  static bool get _useNative => NativeStreamPlayer.available;
+
+  Future<void> _lastOp = Future<void>.value();
+
+  Future<void> _runSerialized(Future<void> Function() op) {
+    final next = _lastOp.then((_) => op());
+    _lastOp = next.then((_) {}, onError: (_) {});
+    return next;
+  }
+
   PlayerNotifier(this._ref) : super(const PlayerState());
 
   @override
@@ -224,6 +270,7 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     _chunkPending = false;
     _nextWav = null;
     _nextWavFrom = -1;
+    _stopStreamSilently();
   }
 
   void _updateWakeLock() {
@@ -232,6 +279,40 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     } else {
       PartialWakeLock.disable();
     }
+  }
+
+  void _stopStreamSilently() {
+    _streamActive = false;
+    _streamGen++;
+    _streamInitialized = false;
+    _streamFinished = false;
+    _streamFinishedAt = null;
+    _clearStreamPending();
+    _streamTokenPositions = null;
+    _streamBaseToken = 0;
+    _totalStreamSamples = 0;
+    _stream.stop();
+  }
+
+  void _clearStreamPending() {
+    _streamPending = null;
+    _streamPendingOff = 0;
+    _streamPendingTokens = 0;
+  }
+
+  void _prepareStreamIndexing() {
+    _streamTokenPositions = null;
+    _streamBaseToken = 0;
+    _totalStreamSamples = 0;
+    if (_allTokens == null || _allTokens!.isEmpty) return;
+    final from = state.currentIndex;
+    if (from >= _allTokens!.length) return;
+    final remaining = _allTokens!.skip(from).toList();
+    final generator = AudioGenerator.fromSettings(_ref.read(appSettingsProvider));
+    _streamTokenPositions =
+        AudioGenerator.computeTokenSamplePositions(remaining, generator);
+    _streamBaseToken = from;
+    _totalStreamSamples = generator.sampleCountFor(remaining);
   }
 
   void _cancelPlayback() {
@@ -305,8 +386,17 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     return map[path] as int? ?? 0;
   }
 
-  Future<void> play() async {
+  Future<void> play() {
+    return _runSerialized(_play);
+  }
+
+  Future<void> _play() async {
     await _ref.read(appSettingsProvider.notifier).ensureLoaded();
+
+    if (_useNative) {
+      await _playNative();
+      return;
+    }
 
     if (state.status == PlayerStatus.paused && _audioPlayer != null) {
       await _audioPlayer!.resume();
@@ -331,6 +421,176 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     }
 
     _playNextChunk();
+  }
+
+  Future<void> _playNative() async {
+    if (state.status == PlayerStatus.paused && _streamInitialized) {
+      await _stream.reset();
+      _clearStreamPending();
+      _streamBaseHead = await _stream.playedFrames();
+      _streamFramesFed = 0;
+      _streamFinished = false;
+      _streamFinishedAt = null;
+      final wordStart = _wordStartIndex(state.currentIndex);
+      if (wordStart >= 0) {
+        state = state.copyWith(currentIndex: wordStart, playedIndex: wordStart);
+      }
+      _prepareStreamIndexing();
+      state = state.copyWith(status: PlayerStatus.playing);
+      _updateWakeLock();
+      _startProgressTimer();
+      _startStreamPump();
+      return;
+    }
+
+    _allTokens = _ref.read(morseTokensProvider);
+    if (_allTokens == null || _allTokens!.isEmpty) {
+      state = state.copyWith(
+        status: PlayerStatus.stopped,
+        error: 'Nessun carattere Morse riconoscibile trovato nel testo.',
+      );
+      _updateWakeLock();
+      return;
+    }
+
+    if (state.currentIndex >= _allTokens!.length) {
+      state = state.copyWith(currentIndex: 0);
+    }
+
+    await _stream.stop();
+    final ok =
+        await _stream.init(sampleRate: _streamSampleRate, channels: 1);
+    if (!ok) {
+      state = state.copyWith(
+        status: PlayerStatus.stopped,
+        error: 'Avvio streaming audio non riuscito.',
+      );
+      _updateWakeLock();
+      return;
+    }
+    _streamInitialized = true;
+    _clearStreamPending();
+    _streamBaseHead = await _stream.playedFrames();
+    _streamFramesFed = 0;
+    _streamFinished = false;
+    _streamFinishedAt = null;
+    _prepareStreamIndexing();
+    state = state.copyWith(
+      status: PlayerStatus.playing,
+      error: null,
+      playedIndex: state.currentIndex,
+      progress: (state.currentIndex / _allTokens!.length).clamp(0.0, 1.0),
+    );
+    _updateWakeLock();
+    _startProgressTimer();
+    _startStreamPump();
+  }
+
+  Future<void> _startStreamPump() async {
+    _streamActive = true;
+    final gen = ++_streamGen;
+    while (_streamActive && gen == _streamGen) {
+      if (state.status != PlayerStatus.playing) break;
+      if (_streamFinished) break;
+      final played = await _stream.playedFrames();
+      if (!_streamActive || gen != _streamGen) break;
+      if (state.status != PlayerStatus.playing) break;
+      final inFlight = _streamFramesFed - (played - _streamBaseHead);
+      if (inFlight < _streamFeedCapFrames) {
+        final more = await _feedStreamAhead(gen);
+        if (!_streamActive || gen != _streamGen) break;
+        if (!more) {
+          _streamFinished = true;
+          _streamFinishedAt = DateTime.now();
+          break;
+        }
+      }
+      await Future<void>.delayed(_streamSleep);
+    }
+  }
+
+  Future<bool> _feedStreamAhead(int gen) async {
+    while (true) {
+      if (!_streamActive || gen != _streamGen) return _hasMoreTokens();
+      if (_streamPending == null) {
+        if (_allTokens == null || state.currentIndex >= _allTokens!.length) {
+          return false;
+        }
+        final from = state.currentIndex;
+        final chunk = _buildWordAlignedChunk(from);
+        if (chunk.isEmpty) return false;
+        final settings = _ref.read(appSettingsProvider);
+        final generator = AudioGenerator.fromSettings(settings);
+        final pcm = generator.tokensToPcm(chunk);
+        _streamPending =
+            pcm.buffer.asUint8List(pcm.offsetInBytes, pcm.lengthInBytes);
+        _streamPendingOff = 0;
+        _streamPendingTokens = chunk.length;
+      }
+      final bytes = _streamPending!;
+      final sliceBytes = _streamSliceFrames * 2;
+      while (_streamPendingOff < bytes.length) {
+        if (!_streamActive || gen != _streamGen) return _hasMoreTokens();
+        final played = await _stream.playedFrames();
+        if (!_streamActive || gen != _streamGen) return _hasMoreTokens();
+        if (_streamFramesFed - (played - _streamBaseHead) >=
+            _streamFeedCapFrames) {
+          return _hasMoreTokens();
+        }
+        final end = math.min(_streamPendingOff + sliceBytes, bytes.length);
+        await _stream.write(Uint8List.sublistView(bytes, _streamPendingOff, end));
+        _streamFramesFed += (end - _streamPendingOff) ~/ 2;
+        _streamPendingOff = end;
+      }
+      _streamPending = null;
+      if (_allTokens == null) return _hasMoreTokens();
+      state =
+          state.copyWith(currentIndex: state.currentIndex + _streamPendingTokens);
+      if (state.currentIndex >= _allTokens!.length) return false;
+    }
+  }
+
+  int _wordStartIndex(int index) {
+    if (_allTokens == null || _allTokens!.isEmpty) return -1;
+    if (index >= _allTokens!.length) index = _allTokens!.length;
+    while (index < _allTokens!.length &&
+        (_allTokens![index] == ' ' || _allTokens![index] == '/')) {
+      index++;
+    }
+    var i = index;
+    while (i > 0 &&
+        _allTokens![i - 1] != ' ' &&
+        _allTokens![i - 1] != '/') {
+      i--;
+    }
+    return i;
+  }
+
+  bool _hasMoreTokens() {
+    return _allTokens != null && state.currentIndex < _allTokens!.length;
+  }
+
+  Future<void> _completeStream() async {
+    final len = _allTokens?.length ?? 0;
+    _streamActive = false;
+    _streamGen++;
+    _streamInitialized = false;
+    _progressTimer?.cancel();
+    _saveTimer?.cancel();
+    _clearStreamPending();
+    _streamTokenPositions = null;
+    _streamBaseToken = 0;
+    _totalStreamSamples = 0;
+    await _stream.stop();
+    _allTokens = null;
+    state = state.copyWith(
+      status: PlayerStatus.stopped,
+      currentIndex: len,
+      playedIndex: len,
+      progress: 1.0,
+    );
+    _updateWakeLock();
+    _autoSave();
   }
 
   Future<void> _playNextChunk() async {
@@ -418,21 +678,33 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
 
   void requestRegen() {
     if (state.status != PlayerStatus.playing || _allTokens == null) return;
+    if (_useNative) {
+      _regenNative();
+      return;
+    }
     _nextWav = null;
     _nextWavFrom = -1;
     _cancelPlayback();
     _playNextChunk();
   }
 
+  Future<void> _regenNative() async {
+    _streamActive = false;
+    _streamGen++;
+    await _stream.reset();
+    _clearStreamPending();
+    _streamBaseHead = await _stream.playedFrames();
+    _streamFramesFed = 0;
+    _streamFinished = false;
+    _streamFinishedAt = null;
+    _prepareStreamIndexing();
+    _startStreamPump();
+  }
+
   void _startProgressTimer() {
     _progressTimer?.cancel();
     _progressTimer = Timer.periodic(const Duration(milliseconds: 200), (_) {
-      if (state.status != PlayerStatus.playing || _allTokens == null) return;
-      state = state.copyWith(
-        progress: _allTokens!.isEmpty
-            ? 0.0
-            : (state.currentIndex / _allTokens!.length).clamp(0.0, 1.0),
-      );
+      _progressTick();
     });
     _saveTimer?.cancel();
     _saveTimer = Timer.periodic(const Duration(seconds: 5), (_) {
@@ -440,7 +712,60 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     });
   }
 
-  Future<void> pause() async {
+  Future<void> _progressTick() async {
+    if (_useNative) {
+      if (state.status != PlayerStatus.playing) return;
+      final played = await _stream.playedFrames();
+      final rel = played - _streamBaseHead;
+      if (_streamFinished) {
+        final threshold = _streamFramesFed;
+        final expired = _streamFinishedAt != null &&
+            DateTime.now().difference(_streamFinishedAt!) >=
+                const Duration(seconds: 4);
+        if (expired || rel >= threshold) {
+          await _completeStream();
+          return;
+        }
+      }
+      var playedIndex = state.currentIndex;
+      if (_streamTokenPositions != null && _streamTokenPositions!.isNotEmpty) {
+        final pos = rel.clamp(0, _totalStreamSamples).toInt();
+        final idx =
+            AudioGenerator.findTokenIndex(_streamTokenPositions!, pos);
+        playedIndex = _streamBaseToken + idx;
+      }
+      state = state.copyWith(
+        progress: _allTokens == null || _allTokens!.isEmpty
+            ? 0.0
+            : (state.currentIndex / _allTokens!.length).clamp(0.0, 1.0),
+        playedIndex: playedIndex,
+      );
+      return;
+    }
+    if (state.status != PlayerStatus.playing || _allTokens == null) return;
+    state = state.copyWith(
+      progress: _allTokens!.isEmpty
+          ? 0.0
+          : (state.currentIndex / _allTokens!.length).clamp(0.0, 1.0),
+    );
+  }
+
+  Future<void> pause() {
+    return _runSerialized(_pause);
+  }
+
+  Future<void> _pause() async {
+    if (_useNative) {
+      _streamActive = false;
+      _streamGen++;
+      await _stream.pause();
+      _progressTimer?.cancel();
+      _saveTimer?.cancel();
+      state = state.copyWith(status: PlayerStatus.paused);
+      _updateWakeLock();
+      _autoSave();
+      return;
+    }
     await _audioPlayer?.pause();
     _progressTimer?.cancel();
     _saveTimer?.cancel();
@@ -449,7 +774,24 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     _autoSave();
   }
 
-  Future<void> stop() async {
+  Future<void> stop() {
+    return _runSerialized(_stop);
+  }
+
+  Future<void> _stop() async {
+    if (_useNative) {
+      _stopStreamSilently();
+      _allTokens = null;
+      state = state.copyWith(
+        status: PlayerStatus.stopped,
+        position: Duration.zero,
+        progress: 0.0,
+        currentIndex: 0,
+      );
+      _updateWakeLock();
+      _autoSave();
+      return;
+    }
     _cancelPlayback();
     _audioPlayer?.stop();
     _audioPlayer?.dispose();
@@ -471,14 +813,52 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     await _seek(newIndex);
   }
 
-  Future<void> _seek(int newIndex) async {
+  Future<void> _seek(int newIndex) {
+    return _runSerialized(() => _seekInternal(newIndex));
+  }
+
+  Future<void> _seekInternal(int newIndex) async {
     if (_allTokens == null) return;
     if (newIndex < 0) newIndex = 0;
     if (newIndex >= _allTokens!.length) newIndex = _allTokens!.length - 1;
+    final newProgress = _allTokens!.isEmpty
+        ? 0.0
+        : (newIndex / _allTokens!.length).clamp(0.0, 1.0);
+    if (_useNative) {
+      final wasPlaying = state.status == PlayerStatus.playing;
+      final wasPaused = state.status == PlayerStatus.paused;
+      _streamActive = false;
+      _streamGen++;
+      state = state.copyWith(
+        currentIndex: newIndex,
+        playedIndex: newIndex,
+        progress: newProgress,
+      );
+      if (wasPlaying) {
+        await _stream.reset();
+        _clearStreamPending();
+        _streamBaseHead = await _stream.playedFrames();
+        _streamFramesFed = 0;
+        _streamFinished = false;
+        _streamFinishedAt = null;
+        _prepareStreamIndexing();
+        state = state.copyWith(status: PlayerStatus.playing);
+        _startStreamPump();
+      } else if (wasPaused && _streamInitialized) {
+        await _stream.flush();
+        _clearStreamPending();
+        _streamBaseHead = await _stream.playedFrames();
+        _streamFramesFed = 0;
+        _streamFinished = false;
+        _streamFinishedAt = null;
+        _prepareStreamIndexing();
+      }
+      return;
+    }
     final wasPlaying = state.status == PlayerStatus.playing;
     _cancelPlayback();
     _audioPlayer?.stop();
-    state = state.copyWith(currentIndex: newIndex);
+    state = state.copyWith(currentIndex: newIndex, progress: newProgress);
     if (wasPlaying) {
       _chunkPending = true;
       _playNextChunk();

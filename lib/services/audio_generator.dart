@@ -104,6 +104,26 @@ class AudioGenerator {
     return _buildWav(pcmBytes);
   }
 
+  Int16List tokensToPcm(List<String> tokens) {
+    return _generatePcm(tokens);
+  }
+
+  int sampleCountFor(List<String> tokens) {
+    var total = 0;
+    for (final token in tokens) {
+      if (token == ' ' || token == '/') {
+        total += wordGapSamples;
+      } else {
+        for (int i = 0; i < token.length; i++) {
+          if (i > 0) total += intraCharGapSamples;
+          total += token[i] == '.' ? dotSamples : dashSamples;
+        }
+        total += interCharGapSamples;
+      }
+    }
+    return total;
+  }
+
   Int16List _generatePcm(List<String> tokens) {
     var totalSamples = 0;
     final segments = <_Segment>[];

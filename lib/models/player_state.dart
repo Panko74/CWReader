@@ -9,6 +9,7 @@ class PlayerState {
   final String? fileName;
   final String rawText;
   final int currentIndex;
+  final int playedIndex;
   final PlayerStatus status;
   final Duration position;
   final int bookmarkIndex;
@@ -20,6 +21,7 @@ class PlayerState {
     this.fileName,
     this.rawText = '',
     this.currentIndex = 0,
+    this.playedIndex = -1,
     this.status = PlayerStatus.stopped,
     this.position = Duration.zero,
     this.bookmarkIndex = -1,
@@ -34,6 +36,7 @@ class PlayerState {
     String? fileName,
     String? rawText,
     int? currentIndex,
+    int? playedIndex,
     PlayerStatus? status,
     Duration? position,
     int? bookmarkIndex,
@@ -45,6 +48,7 @@ class PlayerState {
       fileName: fileName ?? this.fileName,
       rawText: rawText ?? this.rawText,
       currentIndex: currentIndex ?? this.currentIndex,
+      playedIndex: playedIndex ?? this.playedIndex,
       status: status ?? this.status,
       position: position ?? this.position,
       bookmarkIndex: bookmarkIndex ?? this.bookmarkIndex,
@@ -63,6 +67,7 @@ class AppSettings {
   final List<Substitution> substitutions;
   final double volume;
   final int envelopeMs;
+  final bool showText;
 
   const AppSettings({
     this.wpm = 20,
@@ -73,6 +78,7 @@ class AppSettings {
     this.substitutions = defaultSubstitutions,
     this.volume = 1.0,
     this.envelopeMs = 5,
+    this.showText = false,
   });
 
   static const defaultSubstitutions = [
@@ -97,6 +103,7 @@ class AppSettings {
     List<Substitution>? substitutions,
     double? volume,
     int? envelopeMs,
+    bool? showText,
   }) {
     return AppSettings(
       wpm: wpm ?? this.wpm,
@@ -107,6 +114,7 @@ class AppSettings {
       substitutions: substitutions ?? this.substitutions,
       volume: volume ?? this.volume,
       envelopeMs: envelopeMs ?? this.envelopeMs,
+      showText: showText ?? this.showText,
     );
   }
 
@@ -129,6 +137,7 @@ class AppSettings {
         'substitutions': substitutions.map((s) => s.toJson()).toList(),
         'volume': volume,
         'envelopeMs': envelopeMs,
+        'showText': showText,
       };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) => AppSettings(
@@ -145,5 +154,6 @@ class AppSettings {
                 AppSettings.defaultSubstitutions),
         volume: (json['volume'] as num?)?.toDouble() ?? 1.0,
         envelopeMs: json['envelopeMs'] as int? ?? 5,
+        showText: json['showText'] as bool? ?? false,
       );
 }

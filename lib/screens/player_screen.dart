@@ -1,14 +1,31 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_providers.dart';
 import '../models/player_state.dart';
 
-class PlayerScreen extends ConsumerWidget {
+class PlayerScreen extends ConsumerStatefulWidget {
   const PlayerScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PlayerScreen> createState() => _PlayerScreenState();
+}
+
+class _PlayerScreenState extends ConsumerState<PlayerScreen> {
+  double? _dragProgress;
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(playerProvider);
+    final settings = ref.watch(appSettingsProvider);
+    final shownProgress = _dragProgress ?? state.progress;
+    final shownPos =
+        state.playedIndex >= 0 ? state.playedIndex : state.currentIndex;
+    final displayText = ref.watch(displayTextProvider);
+    final charIndices = ref.watch(tokenToCharIndexProvider);
+    final textCharIndex = (shownPos >= 0 && shownPos < charIndices.length)
+        ? charIndices[shownPos]
+        : 0;
 
     return Scaffold(
       appBar: AppBar(
@@ -20,7 +37,7 @@ class PlayerScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.folder_open),
             tooltip: 'Apri un altro file',
-            onPressed: () => _openFile(context, ref),
+            onPressed: () => _openFile(),
           ),
         ],
       ),
@@ -39,7 +56,7 @@ class PlayerScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '${state.currentIndex} caratteri processati',
+                      '${state.playedIndex >= 0 ? state.playedIndex : state.currentIndex} caratteri processati',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const SizedBox(height: 12),
@@ -59,17 +76,23 @@ class PlayerScreen extends ConsumerWidget {
                         trackHeight: 8,
                       ),
                       child: Slider(
-                        value: state.progress.clamp(0.0, 1.0),
+                        value: shownProgress.clamp(0.0, 1.0),
                         onChanged: state.filePath != null
-                            ? (v) => ref
-                                .read(playerProvider.notifier)
-                                .seekToProgress(v)
+                            ? (v) => setState(() => _dragProgress = v)
+                            : null,
+                        onChangeEnd: state.filePath != null
+                            ? (v) {
+                                setState(() => _dragProgress = null);
+                                ref
+                                    .read(playerProvider.notifier)
+                                    .seekToProgress(v);
+                              }
                             : null,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${(state.progress * 100).toStringAsFixed(1)}%',
+                      '${(shownProgress * 100).toStringAsFixed(1)}%',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     if (state.error != null) ...[
@@ -89,6 +112,27 @@ class PlayerScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 32),
             _BookmarkControls(state: state),
+            if (state.filePath != null) ...[
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: () => ref
+                    .read(appSettingsProvider.notifier)
+                    .updateShowText(!settings.showText),
+                icon: Icon(
+                  settings.showText ? Icons.visibility_off : Icons.visibility,
+                ),
+                label: Text(
+                  settings.showText ? 'Nascondi testo' : 'Mostra testo',
+                ),
+              ),
+            ],
+            if (settings.showText && state.filePath != null) ...[
+              const SizedBox(height: 12),
+              _TextReaderBox(
+                text: displayText,
+                position: textCharIndex,
+              ),
+            ],
             const Spacer(),
             _PlaybackControls(state: state),
             const SizedBox(height: 24),
@@ -98,16 +142,16 @@ class PlayerScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _openFile(BuildContext context, WidgetRef ref) async {
+  Future<void> _openFile() async {
     final service = ref.read(fileServiceProvider);
     final ok = await service.requestStoragePermission();
     if (!ok) return;
     final file = await service.pickFile();
-    if (file == null || !context.mounted) return;
+    if (file == null || !mounted) return;
     try {
       await ref.read(playerProvider.notifier).loadFile(file.path!, file.name);
     } catch (e) {
-      if (context.mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Errore: $e')),
         );
@@ -186,6 +230,96 @@ class _PlaybackControls extends ConsumerWidget {
       ],
     );
   }
+}
+
+class _TextReaderBox extends StatelessWidget {
+  final String text;
+  final int position;
+
+  const _TextReaderBox({required this.text, required this.position});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final style = TextStyle(fontSize: 18, color: scheme.onSurface);
+    return Container(
+      height: 48,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        border: Border.all(color: scheme.outlineVariant),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: ClipRect(
+        child: CustomPaint(
+          painter: _KaraokePainter(
+            text: text.replaceAll('\n', ' '),
+            position: position,
+            style: style,
+            underlineColor: scheme.primary,
+          ),
+          child: const SizedBox.expand(),
+        ),
+      ),
+    );
+  }
+}
+
+class _KaraokePainter extends CustomPainter {
+  final String text;
+  final int position;
+  final TextStyle style;
+  final Color underlineColor;
+
+  _KaraokePainter({
+    required this.text,
+    required this.position,
+    required this.style,
+    required this.underlineColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (text.isEmpty) return;
+
+    final start = (position - 30).clamp(0, text.length);
+    final end = (position + 70).clamp(start, text.length);
+    final slice = text.substring(start, end);
+    final rel = position - start;
+
+    final tp = TextPainter(
+      text: TextSpan(text: slice, style: style),
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    final pos = rel.clamp(0, slice.length);
+    final caret = tp.getOffsetForCaret(TextPosition(offset: pos), Rect.zero);
+    final y = (size.height - tp.height) / 2;
+    final underlineX = size.width * 0.5;
+    final dx = underlineX - caret.dx;
+
+    canvas.save();
+    canvas.translate(dx, y);
+    tp.paint(canvas, Offset.zero);
+    canvas.restore();
+
+    final next = tp.getOffsetForCaret(
+      TextPosition(offset: (pos + 1).clamp(0, slice.length)),
+      Rect.zero,
+    );
+    final w = math.max(next.dx - caret.dx, 3.0);
+    final underlinePaint = Paint()
+      ..color = underlineColor
+      ..strokeWidth = 2;
+    canvas.drawLine(
+      Offset(underlineX, y + tp.height),
+      Offset(underlineX + w, y + tp.height),
+      underlinePaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _KaraokePainter oldDelegate) =>
+      oldDelegate.text != text || oldDelegate.position != position;
 }
 
 class _BookmarkControls extends ConsumerWidget {
