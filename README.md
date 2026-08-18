@@ -22,7 +22,11 @@ Read your favorite books as CW (Continuous Wave) Morse code — perfect for ham 
 - **Character substitutions** — Customizable replacements (e.g. quotes, special chars), bigger UI
 - **Italian accented characters** — à, è, é, ì, ò, ù mapped to standard Italian Morse codes
 - **Automatic encoding detection** — UTF-8, Latin-1, Windows-1252, UTF-16 BOM
-- **Wake lock** — Screen stays on while audio is playing
+- **Playback with screen off** — foreground service + wake lock, keeps playing even on locked screens across devices
+- **Karaoke text reader** — "Show text" button displays the text being played, scrolling in reading direction with the current letter underlined
+- **Accurate character counter** — advances character by character, in sync with the audio
+- **Update check** — startup check for newer releases with a direct download link
+- **Persistent book import** — opened books are copied to the app's internal storage and survive app updates; removing a recent entry also deletes its copy
 - **Default substitution `&` → `e`** — Automatically applied to all texts
 
 ## Video
@@ -43,6 +47,16 @@ Read your favorite books as CW (Continuous Wave) Morse code — perfect for ham 
 </table>
 
 ## Changelog
+
+### v1.3.0
+- **Native audio player (AudioTrack)** — no more cut at the start of each chunk, continuous gapless playback
+- **Playback with screen off** — foreground service + wake lock, playback keeps going on locked screens on all devices
+- **Karaoke text reader** — "Show text" button shows the text being played, scrolling with the current letter underlined
+- **Accurate character counter** — position advances character by character, in sync with the audio
+- **Smooth seeking** — correct position even while paused; resumes from the beginning of the current word
+- **Update check** — warns on startup if a newer release is available, with a direct download link
+- **Persistent book import** — books are stored in the app's internal storage and survive updates; removing a recent entry also deletes its copy
+- **Version shown automatically** in Settings → Info
 
 ### v1.2.1
 - **Wake lock**: screen stays on during playback, no more Android sleep/lock
