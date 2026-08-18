@@ -27,7 +27,6 @@ Read your favorite books as CW (Continuous Wave) Morse code — perfect for ham 
 - **Accurate character counter** — advances character by character, in sync with the audio
 - **Update check** — startup check for newer releases with a direct download link
 - **Persistent book import** — opened books are copied to the app's internal storage and survive app updates; removing a recent entry also deletes its copy
-- **Default substitution `&` → `e`** — Automatically applied to all texts
 
 ## Video
 
