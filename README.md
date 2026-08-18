@@ -38,7 +38,7 @@ Read your favorite books as CW (Continuous Wave) Morse code — perfect for ham 
 <table>
   <tr>
     <td align="center"><a href="assets/screenshots/01-Open.jpg"><img src="assets/screenshots/01-Open.jpg" width="80%"></a><br><em>Open file</em></td>
-    <td align="center"><a href="assets/screenshots/02-Play.jpg"><img src="assets/screenshots/02-Play.jpg" width="80%"></a><br><em>Playback</em></td>
+    <td align="center"><a href="assets/screenshots/05-Play.jpg"><img src="assets/screenshots/05-Play.jpg" width="80%"></a><br><em>Playback</em></td>
   </tr>
   <tr>
     <td align="center"><a href="assets/screenshots/03-Settings1.jpg"><img src="assets/screenshots/03-Settings1.jpg" width="80%"></a><br><em>Settings (1)</em></td>
