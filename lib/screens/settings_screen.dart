@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../providers/app_providers.dart';
 import '../models/player_state.dart';
 import '../models/substitution.dart';
@@ -371,8 +372,28 @@ class _SubstitutionList extends ConsumerWidget {
   }
 }
 
-class _AboutSection extends StatelessWidget {
+class _AboutSection extends StatefulWidget {
   const _AboutSection();
+
+  @override
+  State<_AboutSection> createState() => _AboutSectionState();
+}
+
+class _AboutSectionState extends State<_AboutSection> {
+  String _version = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    final info = await PackageInfo.fromPlatform();
+    if (mounted) {
+      setState(() => _version = 'v${info.version}');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -392,7 +413,7 @@ class _AboutSection extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            Text('v1.2.1',
+            Text(_version,
                 style: theme.textTheme.bodySmall),
             const SizedBox(height: 4),
             Text('Sviluppato da IW5DUA',

@@ -32,13 +32,51 @@ class FileService {
   }
 
   Future<PlatformFile?> pickFile() async {
-    // file_picker uses SAF internally, no permissions needed on Android 10+
+    // file_picker usa SAF internamente, niente permessi su Android 10+
     final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['epub', 'txt'],
     );
     if (result == null || result.files.isEmpty) return null;
     return result.files.first;
+  }
+
+  /// Copia il libro scelto nello storage persistente dell'app
+  /// (non in cache, che verrebbe cancellata da un aggiornamento o dal sistema),
+  /// così il percorso resta valido tra una release e l'altra.
+  Future<PlatformFile> importBook(PlatformFile file) async {
+    final docs = await getApplicationDocumentsDirectory();
+    final booksDir = Directory('${docs.path}/books');
+    await booksDir.create(recursive: true);
+
+    final name = file.name;
+    final dot = name.lastIndexOf('.');
+    final base = dot > 0 ? name.substring(0, dot) : name;
+    final ext = dot > 0 ? name.substring(dot) : '';
+
+    var target = File('${booksDir.path}/$name');
+    var counter = 1;
+    while (await target.exists()) {
+      target = File('${booksDir.path}/$base ($counter)$ext');
+      counter++;
+    }
+
+    final src = file.path != null ? File(file.path!) : null;
+    if (src == null) {
+      final bytes = file.bytes;
+      if (bytes == null) {
+        throw Exception('Impossibile leggere il file selezionato.');
+      }
+      await target.writeAsBytes(bytes);
+    } else {
+      await src.copy(target.path);
+    }
+
+    return PlatformFile(
+      path: target.path,
+      name: target.path.split('/').last,
+      size: await target.length(),
+    );
   }
 
   Future<String> readFileContent(String filePath) async {

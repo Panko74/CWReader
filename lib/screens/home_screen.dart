@@ -248,6 +248,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                       onPressed: () async {
                                         await removeRecentFile(path);
                                         ref.invalidate(recentFilesProvider);
+                                        ref.invalidate(lastPositionsProvider);
+                                        ref.invalidate(bookmarksProvider);
                                       },
                                     ),
                                   ],
@@ -285,9 +287,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final file = await service.pickFile();
     if (file == null) return;
 
+    final imported = await service.importBook(file);
+
     if (context.mounted) {
       try {
-        await ref.read(playerProvider.notifier).loadFile(file.path!, file.name);
+        await ref.read(playerProvider.notifier).loadFile(
+              imported.path!,
+              imported.name,
+            );
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const PlayerScreen()),

@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:audioplayers/audioplayers.dart' hide PlayerState;
 import '../models/player_state.dart';
 import '../models/substitution.dart';
@@ -158,9 +160,17 @@ final recentFilesProvider = FutureProvider<List<Map<String, String>>>((ref) asyn
   final prefs = await SharedPreferences.getInstance();
   final json = prefs.getString(_recentFilesKey);
   if (json == null) return [];
-  return (jsonDecode(json) as List<dynamic>)
+  final list = (jsonDecode(json) as List<dynamic>)
       .map((e) => Map<String, String>.from(e as Map))
       .toList();
+  final valid = <Map<String, String>>[];
+  for (final e in list) {
+    final path = e['path'];
+    if (path != null && await File(path).exists()) {
+      valid.add(e);
+    }
+  }
+  return valid;
 });
 
 final lastPositionsProvider = FutureProvider<Map<String, int>>((ref) async {
@@ -187,6 +197,26 @@ Future<void> removeRecentFile(String path) async {
       .toList();
   list.removeWhere((e) => e['path'] == path);
   await prefs.setString(_recentFilesKey, jsonEncode(list));
+
+  for (final key in [_lastPositionsKey, _bookmarksKey]) {
+    final keyJson = prefs.getString(key);
+    if (keyJson == null) continue;
+    final map = Map<String, dynamic>.from(jsonDecode(keyJson) as Map);
+    if (map.remove(path) != null) {
+      await prefs.setString(key, jsonEncode(map));
+    }
+  }
+
+  final docs = await getApplicationDocumentsDirectory();
+  final booksDir = Directory('${docs.path}/books').absolute.path;
+  final file = File(path).absolute.path;
+  if (file.startsWith(booksDir)) {
+    try {
+      if (await File(file).exists()) {
+        await File(file).delete();
+      }
+    } catch (_) {}
+  }
 }
 
 Future<void> _addRecentFileHelper(Ref ref, String path, String name) async {

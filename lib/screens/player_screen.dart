@@ -149,7 +149,11 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
     final file = await service.pickFile();
     if (file == null || !mounted) return;
     try {
-      await ref.read(playerProvider.notifier).loadFile(file.path!, file.name);
+      final imported = await service.importBook(file);
+      if (!mounted) return;
+      await ref
+          .read(playerProvider.notifier)
+          .loadFile(imported.path!, imported.name);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
