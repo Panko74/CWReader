@@ -16,15 +16,21 @@ Read your favorite books as CW (Continuous Wave) Morse code — perfect for ham 
 - **Pitch control** — 400–900 Hz carrier frequency
 - **Envelope (attack/release)** — Eliminates clicks at tone boundaries, adjustable 0–50 ms
 - **Scrubbable progress bar** — Drag to any position in the book
+- **Swipe navigation** — Swipe between book list (left), reader (center) and settings (right)
+- **Realism effects** — Simulated HF propagation & keying:
+  - **QSB (fading)** — adjustable depth and period (10–35 s)
+  - **Band noise** — receiver noise floor, adjustable level
+  - **QRN (static)** — atmospheric static crashes, adjustable level
+  - **Fist** — key type simulation (*bug*, *straight key*, *paddle*, *sideswiper*) with adjustable jitter amount
 - **Per-file progress** — Automatically saves last position for each file
 - **Recent files** — Last 10 files with quick resume, delete entries
 - **Bookmarks** — Save and restore positions per file
+- **Playback with screen off** — foreground service + wake lock, keeps playing even on locked screens across devices
+- **Karaoke text reader** — "Show text" button displays the text being played, scrolling with the current letter underlined
+- **Accurate character counter** — advances character by character, in sync with the audio
 - **Character substitutions** — Customizable replacements (e.g. quotes, special chars), bigger UI
 - **Italian accented characters** — à, è, é, ì, ò, ù mapped to standard Italian Morse codes
 - **Automatic encoding detection** — UTF-8, Latin-1, Windows-1252, UTF-16 BOM
-- **Playback with screen off** — foreground service + wake lock, keeps playing even on locked screens across devices
-- **Karaoke text reader** — "Show text" button displays the text being played, scrolling in reading direction with the current letter underlined
-- **Accurate character counter** — advances character by character, in sync with the audio
 - **Update check** — startup check for newer releases with a direct download link
 - **Persistent book import** — opened books are copied to the app's internal storage and survive app updates; removing a recent entry also deletes its copy
 
@@ -43,9 +49,18 @@ Read your favorite books as CW (Continuous Wave) Morse code — perfect for ham 
     <td align="center"><a href="assets/screenshots/03-Settings1.jpg"><img src="assets/screenshots/03-Settings1.jpg" width="80%"></a><br><em>Settings (1)</em></td>
     <td align="center"><a href="assets/screenshots/04-Settings2.jpg"><img src="assets/screenshots/04-Settings2.jpg" width="80%"></a><br><em>Settings (2)</em></td>
   </tr>
+  <tr>
+    <td align="center"><a href="assets/screenshots/05-Settings3.jpg"><img src="assets/screenshots/05-Settings3.jpg" width="80%"></a><br><em>Settings (3) — realism effects</em></td>
+  </tr>
 </table>
 
 ## Changelog
+
+### v1.4.0
+- **Realism effects**: QSB fading (depth + period 10–35 s), band noise and QRN static, all adjustable in real time
+- **Fist simulation**: key type selector (bug, straight key, paddle, sideswiper) with adjustable jitter amount
+- **Swipe navigation**: swipe between book list, reader and settings
+- **GUI**: refined Material 3 theme (cards, sliders, chips, buttons)
 
 ### v1.3.0
 - **Native audio player (AudioTrack)** — no more cut at the start of each chunk, continuous gapless playback

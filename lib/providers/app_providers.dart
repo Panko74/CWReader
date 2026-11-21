@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
@@ -16,6 +17,16 @@ import '../services/native_stream_player.dart';
 import '../services/partial_wake_lock.dart';
 
 final fileServiceProvider = Provider<FileService>((ref) => FileService());
+
+const int kPageBooks = 0;
+const int kPagePlayer = 1;
+const int kPageSettings = 2;
+
+final mainPageControllerProvider = Provider<PageController>((ref) {
+  final controller = PageController(initialPage: kPagePlayer);
+  ref.onDispose(controller.dispose);
+  return controller;
+});
 
 final appSettingsProvider =
     StateNotifierProvider<AppSettingsNotifier, AppSettings>((ref) {
@@ -86,6 +97,36 @@ class AppSettingsNotifier extends StateNotifier<AppSettings> {
 
   void updateShowText(bool show) {
     state = state.copyWith(showText: show);
+    _save();
+  }
+
+  void updateQsb(double v) {
+    state = state.copyWith(qsb: v.clamp(0.0, 1.0));
+    _save();
+  }
+
+  void updateQsbPeriod(double v) {
+    state = state.copyWith(qsbPeriod: v.clamp(10.0, 35.0));
+    _save();
+  }
+
+  void updateBandNoise(double v) {
+    state = state.copyWith(bandNoise: v.clamp(0.0, 1.0));
+    _save();
+  }
+
+  void updateQrn(double v) {
+    state = state.copyWith(qrn: v.clamp(0.0, 1.0));
+    _save();
+  }
+
+  void updateFistType(FistType t) {
+    state = state.copyWith(fistType: t);
+    _save();
+  }
+
+  void updateFistAmount(double v) {
+    state = state.copyWith(fistAmount: v.clamp(0.0, 1.0));
     _save();
   }
 
@@ -338,7 +379,8 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     final from = state.currentIndex;
     if (from >= _allTokens!.length) return;
     final remaining = _allTokens!.skip(from).toList();
-    final generator = AudioGenerator.fromSettings(_ref.read(appSettingsProvider));
+    final generator = AudioGenerator.fromSettings(_ref.read(appSettingsProvider),
+        seed: from);
     _streamTokenPositions =
         AudioGenerator.computeTokenSamplePositions(remaining, generator);
     _streamBaseToken = from;
@@ -550,7 +592,7 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
         final chunk = _buildWordAlignedChunk(from);
         if (chunk.isEmpty) return false;
         final settings = _ref.read(appSettingsProvider);
-        final generator = AudioGenerator.fromSettings(settings);
+        final generator = AudioGenerator.fromSettings(settings, seed: from);
         final pcm = generator.tokensToPcm(chunk);
         _streamPending =
             pcm.buffer.asUint8List(pcm.offsetInBytes, pcm.lengthInBytes);
@@ -647,7 +689,7 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     } else {
       _nextWav = null;
       final settings = _ref.read(appSettingsProvider);
-      final generator = AudioGenerator.fromSettings(settings);
+      final generator = AudioGenerator.fromSettings(settings, seed: fromIndex);
       wav = generator.tokensToWav(chunk);
     }
 
@@ -701,7 +743,7 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     final chunk = _buildWordAlignedChunk(startIndex);
     if (chunk.isEmpty) return;
     final settings = _ref.read(appSettingsProvider);
-    final generator = AudioGenerator.fromSettings(settings);
+    final generator = AudioGenerator.fromSettings(settings, seed: startIndex);
     _nextWav = generator.tokensToWav(chunk);
     _nextWavFrom = startIndex;
   }

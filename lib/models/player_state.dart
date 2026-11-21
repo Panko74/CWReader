@@ -4,6 +4,8 @@ enum PlayerStatus { stopped, playing, paused }
 
 enum Waveform { sine, square, triangle, sawtooth }
 
+enum FistType { off, bug, straight, paddle, sideswiper }
+
 class PlayerState {
   final String? filePath;
   final String? fileName;
@@ -68,6 +70,12 @@ class AppSettings {
   final double volume;
   final int envelopeMs;
   final bool showText;
+  final double qsb;
+  final double qsbPeriod;
+  final double bandNoise;
+  final double qrn;
+  final FistType fistType;
+  final double fistAmount;
 
   const AppSettings({
     this.wpm = 20,
@@ -79,6 +87,12 @@ class AppSettings {
     this.volume = 1.0,
     this.envelopeMs = 5,
     this.showText = false,
+    this.qsb = 0.0,
+    this.qsbPeriod = 20.0,
+    this.bandNoise = 0.0,
+    this.qrn = 0.0,
+    this.fistType = FistType.off,
+    this.fistAmount = 0.5,
   });
 
   static const defaultSubstitutions = [
@@ -104,6 +118,12 @@ class AppSettings {
     double? volume,
     int? envelopeMs,
     bool? showText,
+    double? qsb,
+    double? qsbPeriod,
+    double? bandNoise,
+    double? qrn,
+    FistType? fistType,
+    double? fistAmount,
   }) {
     return AppSettings(
       wpm: wpm ?? this.wpm,
@@ -115,6 +135,12 @@ class AppSettings {
       volume: volume ?? this.volume,
       envelopeMs: envelopeMs ?? this.envelopeMs,
       showText: showText ?? this.showText,
+      qsb: qsb ?? this.qsb,
+      qsbPeriod: qsbPeriod ?? this.qsbPeriod,
+      bandNoise: bandNoise ?? this.bandNoise,
+      qrn: qrn ?? this.qrn,
+      fistType: fistType ?? this.fistType,
+      fistAmount: fistAmount ?? this.fistAmount,
     );
   }
 
@@ -138,6 +164,12 @@ class AppSettings {
         'volume': volume,
         'envelopeMs': envelopeMs,
         'showText': showText,
+        'qsb': qsb,
+        'qsbPeriod': qsbPeriod,
+        'bandNoise': bandNoise,
+        'qrn': qrn,
+        'fistType': fistType.index,
+        'fistAmount': fistAmount,
       };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) => AppSettings(
@@ -155,5 +187,11 @@ class AppSettings {
         volume: (json['volume'] as num?)?.toDouble() ?? 1.0,
         envelopeMs: json['envelopeMs'] as int? ?? 5,
         showText: json['showText'] as bool? ?? false,
+        qsb: (json['qsb'] as num?)?.toDouble() ?? 0.0,
+        qsbPeriod: (json['qsbPeriod'] as num?)?.toDouble() ?? 20.0,
+        bandNoise: (json['bandNoise'] as num?)?.toDouble() ?? 0.0,
+        qrn: (json['qrn'] as num?)?.toDouble() ?? 0.0,
+        fistType: FistType.values[json['fistType'] as int? ?? 0],
+        fistAmount: (json['fistAmount'] as num?)?.toDouble() ?? 0.5,
       );
 }

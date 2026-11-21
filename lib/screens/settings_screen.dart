@@ -27,6 +27,14 @@ class SettingsScreen extends ConsumerWidget {
           _FarnsworthSlider(settings: settings, ref: ref),
           _ExtraWordSpaceSlider(settings: settings, ref: ref),
           const SizedBox(height: 16),
+          _SectionHeader(title: 'Effetti realismo'),
+          _QsbSlider(settings: settings, ref: ref),
+          _QsbPeriodSlider(settings: settings, ref: ref),
+          _BandNoiseSlider(settings: settings, ref: ref),
+          _QrnSlider(settings: settings, ref: ref),
+          _FistSelector(settings: settings, ref: ref),
+          _FistAmountSlider(settings: settings, ref: ref),
+          const SizedBox(height: 16),
           _SectionHeader(title: 'Sostituzioni caratteri'),
           _SubstitutionList(settings: settings, ref: ref),
           const SizedBox(height: 16),
@@ -285,6 +293,231 @@ class _EnvelopeSlider extends StatelessWidget {
                   .updateEnvelope(v.round()),
               onChangeEnd: (_) =>
                   ref.read(playerProvider.notifier).requestRegen(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _QsbSlider extends StatelessWidget {
+  final AppSettings settings;
+  final WidgetRef ref;
+  const _QsbSlider({required this.settings, required this.ref});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('QSB (fading): ${(settings.qsb * 100).round()}%'),
+            Slider(
+              value: settings.qsb,
+              min: 0,
+              max: 1.0,
+              divisions: 20,
+              label: '${(settings.qsb * 100).round()}%',
+              onChanged: (v) =>
+                  ref.read(appSettingsProvider.notifier).updateQsb(v),
+              onChangeEnd: (_) =>
+                  ref.read(playerProvider.notifier).requestRegen(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _QsbPeriodSlider extends StatelessWidget {
+  final AppSettings settings;
+  final WidgetRef ref;
+  const _QsbPeriodSlider({required this.settings, required this.ref});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = settings.qsbPeriod;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Periodo QSB: ${s.toStringAsFixed(0)} s'),
+            Slider(
+              value: s,
+              min: 10,
+              max: 35,
+              divisions: 25,
+              label: '${s.toStringAsFixed(0)} s',
+              onChanged: (v) =>
+                  ref.read(appSettingsProvider.notifier).updateQsbPeriod(v),
+              onChangeEnd: (_) =>
+                  ref.read(playerProvider.notifier).requestRegen(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BandNoiseSlider extends StatelessWidget {
+  final AppSettings settings;
+  final WidgetRef ref;
+  const _BandNoiseSlider({required this.settings, required this.ref});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Rumore di banda: ${(settings.bandNoise * 100).round()}%'),
+            Slider(
+              value: settings.bandNoise,
+              min: 0,
+              max: 1.0,
+              divisions: 20,
+              label: '${(settings.bandNoise * 100).round()}%',
+              onChanged: (v) =>
+                  ref.read(appSettingsProvider.notifier).updateBandNoise(v),
+              onChangeEnd: (_) =>
+                  ref.read(playerProvider.notifier).requestRegen(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _QrnSlider extends StatelessWidget {
+  final AppSettings settings;
+  final WidgetRef ref;
+  const _QrnSlider({required this.settings, required this.ref});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('QRN (static): ${(settings.qrn * 100).round()}%'),
+            Slider(
+              value: settings.qrn,
+              min: 0,
+              max: 1.0,
+              divisions: 20,
+              label: '${(settings.qrn * 100).round()}%',
+              onChanged: (v) =>
+                  ref.read(appSettingsProvider.notifier).updateQrn(v),
+              onChangeEnd: (_) =>
+                  ref.read(playerProvider.notifier).requestRegen(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FistSelector extends StatelessWidget {
+  final AppSettings settings;
+  final WidgetRef ref;
+  const _FistSelector({required this.settings, required this.ref});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Tipo di tasto (fist)'),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: FistType.values.map((ft) {
+                final selected = settings.fistType == ft;
+                return ChoiceChip(
+                  label: Text(_fistLabel(ft)),
+                  selected: selected,
+                  onSelected: (_) {
+                    ref
+                        .read(appSettingsProvider.notifier)
+                        .updateFistType(ft);
+                    ref.read(playerProvider.notifier).requestRegen();
+                  },
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _fistLabel(FistType ft) {
+    switch (ft) {
+      case FistType.off:
+        return 'Disattivato';
+      case FistType.bug:
+        return 'Bug';
+      case FistType.straight:
+        return 'Verticale';
+      case FistType.paddle:
+        return 'Paddle';
+      case FistType.sideswiper:
+        return 'Sideswiper';
+    }
+  }
+}
+
+class _FistAmountSlider extends StatelessWidget {
+  final AppSettings settings;
+  final WidgetRef ref;
+  const _FistAmountSlider({required this.settings, required this.ref});
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = settings.fistType != FistType.off;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Quantità fist: ${(settings.fistAmount * 100).round()}%',
+              style: TextStyle(
+                color: enabled ? null : Theme.of(context).disabledColor,
+              ),
+            ),
+            Slider(
+              value: settings.fistAmount,
+              min: 0,
+              max: 1.0,
+              divisions: 20,
+              label: '${(settings.fistAmount * 100).round()}%',
+              onChanged: enabled
+                  ? (v) => ref
+                      .read(appSettingsProvider.notifier)
+                      .updateFistAmount(v)
+                  : null,
+              onChangeEnd: enabled
+                  ? (_) => ref.read(playerProvider.notifier).requestRegen()
+                  : null,
             ),
           ],
         ),

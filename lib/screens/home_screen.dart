@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../providers/app_providers.dart';
-import '../services/update_checker.dart';
-import 'player_screen.dart';
-import 'settings_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -14,48 +10,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  static bool _updateChecked = false;
-
-  @override
-  void initState() {
-    super.initState();
-    if (!_updateChecked) {
-      _updateChecked = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) => _checkUpdate());
-    }
-  }
-
-  Future<void> _checkUpdate() async {
-    final info = await UpdateChecker.checkForUpdate();
-    if (info == null || !mounted) return;
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Nuova versione disponibile'),
-        content: Text(
-          'È disponibile CWReader ${info.version}. '
-          'Vuoi scaricarla ora?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Più tardi'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              launchUrl(
-                Uri.parse(info.downloadUrl),
-                mode: LaunchMode.externalApplication,
-              );
-            },
-            child: const Text('Scarica'),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final fileName = ref.watch(fileNameProvider);
@@ -69,10 +23,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SettingsScreen()),
-            ),
+            onPressed: () => _goToPage(kPageSettings),
           ),
         ],
       ),
@@ -139,12 +90,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   FilledButton.tonalIcon(
                                     icon: const Icon(Icons.play_arrow),
                                     label: const Text('Riproduci'),
-                                    onPressed: () => Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => const PlayerScreen(),
-                                      ),
-                                    ),
+                                    onPressed: () => _goToPage(kPagePlayer),
                                   ),
                                 ],
                               ),
@@ -229,13 +175,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                         ref
                                             .read(playerProvider.notifier)
                                             .loadFile(path, name);
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) =>
-                                                const PlayerScreen(),
-                                          ),
-                                        );
+                                        _goToPage(kPagePlayer);
                                       },
                                     ),
                                     const SizedBox(width: 4),
@@ -270,6 +210,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  void _goToPage(int index) {
+    ref.read(mainPageControllerProvider).animateToPage(
+          index,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+        );
+  }
+
   Future<void> _openFile(BuildContext context, WidgetRef ref) async {
     final service = ref.read(fileServiceProvider);
 
@@ -295,10 +243,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               imported.path!,
               imported.name,
             );
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const PlayerScreen()),
-        );
+        _goToPage(kPagePlayer);
       } catch (e) {
         if (context.mounted) {
           ScaffoldMessenger.of(
